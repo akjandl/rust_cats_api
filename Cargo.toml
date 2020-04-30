@@ -1,0 +1,19 @@
+[package]
+name = "cat_collector"
+version = "0.1.0"
+authors = ["Andy Jandl <akjandl@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = "0.4.4"
+diesel = { version = "1.0.0", features = ["postgres"] }
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+
+[dependencies.rocket_contrib]
+version = "0.4.4"
+default-features = false
+features = ["diesel_postgres_pool", "json"]
