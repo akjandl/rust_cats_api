@@ -1,4 +1,4 @@
-use rocket_contrib::json::JsonValue;
+use rocket_contrib::json::{JsonValue};
 use rocket::response;
 use rocket::response::{Responder, Response};
 use rocket::request::Request;

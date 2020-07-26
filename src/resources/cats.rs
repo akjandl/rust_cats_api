@@ -23,6 +23,7 @@ pub fn get_cats_by_name(name: String, conn: Database) -> Json<Cats> {
         SELECT id, name, color, age, description 
         FROM cats 
         WHERE lower(name) = $1
+        ORDER BY id
         ;",
     )
     .bind::<Text, _>(name_lower)
@@ -42,9 +43,10 @@ pub fn get_cats(limit: Option<i64>, conn: Database) -> Json<Cats> {
                 at_most
             }
         }
-        None => 2,
+        None => 10,
     };
     let c = schema::cats::table
+        .order_by(schema::cats::id)
         .limit(lim)
         .get_results(&*conn)
         .expect("Error finding all cats");

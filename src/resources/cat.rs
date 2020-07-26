@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 use rocket_contrib::json::Json;
-use rocket::response::status::NotFound;
 use rocket::http::Status;
 
 use crate::guards::Database;
@@ -26,20 +25,22 @@ pub struct Cat<'a> {
 }
 
 #[get("/<id>")]
-pub fn get_cat(id: i32, conn: Database) -> ApiResponse {
+pub fn get_cat(id: i32, conn: Database) -> Result<Json<CatModel>, ApiResponse> {
     let cat = cats::table
         .find(id)
-        .get_result::<CatModel>(&*conn)
-        .map_err(|e| NotFound(e.to_string()));
+        .get_result::<CatModel>(&*conn);
     match cat {
-        Ok(c) => return ApiResponse {
-            json: json!(c),
-            status: Status::Ok
-        },
-        Err(_) => return ApiResponse {
-            json: json!({"message": "Cat not found."}),
-            status: Status::NotFound
-        }
+        Ok(c) => return Ok(Json(c)),
+        Err(e) => match e {
+            diesel::result::Error::NotFound => return Err(ApiResponse {
+                json: json!({"message": "Cat not found."}), 
+                status: Status::NotFound
+            }),
+            _ => return Err(ApiResponse {
+                json: json!({"message": "Error occurred while searching for cat."}),
+                status: Status::InternalServerError
+            })
+        } 
     }
 }
 
@@ -60,7 +61,7 @@ pub fn new_cat(cat: Json<Cat>, conn: Database) -> Json<CatModel> {
 }
 
 #[put("/", data = "<cat>")]
-pub fn update_cat(cat: Json<CatModel>, conn: Database) -> Json<CatModel> {
+pub fn update_cat(cat: Json<CatModel>, conn: Database) -> Result<Json<CatModel>, ApiResponse> {
     let c = diesel::update(cats::table.find(cat.id))
         .set((
             cats::name.eq(&cat.name),
@@ -68,7 +69,18 @@ pub fn update_cat(cat: Json<CatModel>, conn: Database) -> Json<CatModel> {
             cats::age.eq(cat.age),
             cats::description.eq(&cat.description),
         ))
-        .get_result::<CatModel>(&*conn)
-        .expect("Error occurred while updating cat.");
-    Json(c)
+        .get_result::<CatModel>(&*conn);
+        match c {
+            Ok(cat_data) => return Ok(Json(cat_data)),
+            Err(e) => match e {
+                diesel::result::Error::NotFound => return Err(ApiResponse {
+                    json: json!({"message": "Cat not found."}),
+                    status: Status::NotFound
+                }),
+                _ => return Err(ApiResponse {
+                    json: json!({"message": "Error occurred while updating cat."}),
+                    status: Status::InternalServerError
+                })
+            }
+        }
 }

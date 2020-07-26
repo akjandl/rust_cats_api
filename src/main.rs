@@ -9,12 +9,11 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
 
-pub mod guards;
-pub mod models;
-pub mod resources;
-pub mod schema;
+mod guards;
+mod models;
+mod resources;
+mod schema;
 
-use guards::Database;
 use resources::cat;
 use resources::cats;
 
@@ -25,7 +24,7 @@ fn home() -> &'static str {
 
 fn main() {
     rocket::ignite()
-        .attach(Database::fairing())
+        .attach(guards::Database::fairing())
         .mount("/api/", routes![home,])
         .mount(
             "/api/cat",
